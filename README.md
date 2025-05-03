@@ -1,4 +1,4 @@
-![Drone Guardian Logo](logo.png)
+![Drone Guardian Logo](docs/logo.png)
 
 # Thermal Drone Footage Anomaly Detector
 
@@ -61,61 +61,67 @@ An application for anomaly detection in thermal drone footage for search and res
 -   Python 3.8+ installed
 -   Git (for cloning the repository)
 
-### Installation
+### Installation & Running (Recommended)
 
-1.  Clone the repository:
+1.  **Clone the repository:**
     ```bash
     git clone <repository-url>
     cd <repository-directory>
     ```
 
+2.  **Run the setup script:**
+    This script will create a virtual environment, install all dependencies (including `ultralytics` for YOLOv8 support), run basic tests, and launch the Streamlit dashboard.
+    -   **On macOS/Linux:**
+        ```bash
+        chmod +x setup_and_run.sh
+        ./setup_and_run.sh
+        ```
+    -   **On Windows:**
+        ```batch
+        setup_and_run.bat
+        ```
+
+### Manual Installation (Alternative)
+
+If you prefer manual setup:
+
+1.  Clone the repository (as above).
 2.  Create and activate a virtual environment (recommended):
     ```bash
     python -m venv venv
     # On Windows: venv\Scripts\activate
     # On macOS/Linux: source venv/bin/activate
     ```
-
 3.  Install base dependencies:
     ```bash
     pip install -r requirements.txt
     ```
-
 4.  **Install YOLOv8 support (Optional but Recommended):**
-    The `requirements.txt` file is missing the `ultralytics` library needed for YOLOv8 human detection. Install it manually:
     ```bash
     pip install ultralytics
     ```
-    *(Without this, the dashboard will fall back to the less accurate thermal blob detection method).*
 
-## Running the Application
+## Running the Application (After Manual Setup)
 
-### Recommended Method: `run_dashboard.py`
+If you performed a manual installation, you can run the dashboard using:
 
-The most reliable way to launch the Streamlit dashboard:
+-   **Recommended Script:** `python run_dashboard.py`
+-   **Direct Streamlit Command:** `streamlit run dashboard.py`
+-   **Shell Scripts (less recommended after manual setup):** `./run.sh` (macOS/Linux) or `run.bat` (Windows)
+
+### Command-Line Batch Processing
+
 ```bash
-python run_dashboard.py
+# Activate venv first if not using setup_and_run.sh/bat
+source venv/bin/activate  # or venv\Scripts\activate
+
+python process_directory.py --input /path/to/images --output /path/to/results --save --model [resnet18|resnet50]
 ```
-This script handles checks and launches `streamlit run dashboard.py`.
-
-### Alternative Methods
-
--   **Direct Streamlit Command:**
-    ```bash
-    streamlit run dashboard.py
-    ```
--   **Shell Scripts:**
-    -   macOS/Linux: `./run.sh`
-    -   Windows: `run.bat`
--   **Command-Line Batch Processing:**
-    ```bash
-    python process_directory.py --input /path/to/images --output /path/to/results --save --model [resnet18|resnet50]
-    ```
-    *(Note: Confirm which detection logic `process_directory.py` uses. Add `--model` argument if supported).*
+*(Note: Confirm which detection logic `process_directory.py` uses. Add `--model` argument if supported).*
 
 ## Usage Guide (Dashboard)
 
-1.  Launch the dashboard (`python run_dashboard.py`).
+1.  Launch the application using the setup script (`./setup_and_run.sh` or `setup_and_run.bat`).
 2.  Select the PatchCore model backbone (ResNet18/ResNet50) in the sidebar.
 3.  Configure human detection settings (e.g., enable/disable, thresholds) if options are available.
 4.  Upload one or more thermal drone images.
