@@ -1,0 +1,16 @@
+{"time":"2025-05-03T07:46:19.638469+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"outputs/patchcore_resnet18/wandb/wandb/run-20250503_074619-ucreieof/logs/debug-core.log"}
+{"time":"2025-05-03T07:46:19.997529+02:00","level":"INFO","msg":"created new stream","id":"ucreieof"}
+{"time":"2025-05-03T07:46:19.997563+02:00","level":"INFO","msg":"stream: started","id":"ucreieof"}
+{"time":"2025-05-03T07:46:19.997578+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"ucreieof"}
+{"time":"2025-05-03T07:46:19.99762+02:00","level":"INFO","msg":"handler: started","stream_id":"ucreieof"}
+{"time":"2025-05-03T07:46:19.997888+02:00","level":"INFO","msg":"sender: started","stream_id":"ucreieof"}
+{"time":"2025-05-03T07:46:20.37955+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-05-03T08:01:05.365774+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-05-03T08:01:05.365841+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-05-03T08:01:06.369473+02:00","level":"INFO","msg":"handler: operation stats","stats":{"operations":[{"desc":"uploading media/images/visualizations/top_anomalies_summary_2_62bb2a0d963ba5f69570.png","runtime_seconds":2.29630175,"progress":"480.0KB/616.6KB"},{"desc":"uploading media/images/visualizations/anomaly_1_3_43c08e0b3dc35546bd43.png","runtime_seconds":2.296298083,"progress":"304.0KB/341.6KB"},{"desc":"uploading media/images/visualizations/anomaly_2_4_c7c6f3761f0b7deb2c75.png","runtime_seconds":2.2962975,"progress":"208.0KB/260.8KB"},{"desc":"uploading media/images/visualizations/anomaly_3_5_78d3729e586572abf82a.png","runtime_seconds":2.296296,"progress":"208.0KB/340.1KB"},{"desc":"uploading media/images/visualizations/anomaly_4_6_1330c0bb51ad14021872.png","runtime_seconds":2.296292208,"progress":"304.0KB/326.2KB"},{"desc":"uploading media/images/visualizations/anomaly_6_8_bedc5d1cbd0e8c9791c0.png","runtime_seconds":2.228845708,"progress":"176.0KB/216.4KB"},{"desc":"uploading media/images/visualizations/anomaly_7_9_843577fd375900ffa436.png","runtime_seconds":2.228841292,"progress":"240.0KB/292.7KB"},{"desc":"uploading media/images/visualizations/anomaly_8_10_31a04d8fa60956b6b08a.png","runtime_seconds":2.228841042,"progress":"208.0KB/259.0KB"},{"desc":"uploading media/images/visualizations/anomaly_9_11_192400561e820da2b5e5.png","runtime_seconds":2.228840333,"progress":"224.0KB/229.9KB"},{"desc":"uploading media/images/visualizations/anomaly_10_12_af660c687540952b5cb0.png","runtime_seconds":2.228839292,"progress":"208.0KB/282.7KB"}],"total_operations":64}}
+{"time":"2025-05-03T08:01:14.399348+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-05-03T08:01:14.676378+02:00","level":"INFO","msg":"stream: closing","id":"ucreieof"}
+{"time":"2025-05-03T08:01:14.676435+02:00","level":"INFO","msg":"handler: closed","stream_id":"ucreieof"}
+{"time":"2025-05-03T08:01:14.676464+02:00","level":"INFO","msg":"sender: closed","stream_id":"ucreieof"}
+{"time":"2025-05-03T08:01:14.676765+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"ucreieof"}
+{"time":"2025-05-03T08:01:14.67682+02:00","level":"INFO","msg":"stream: closed","id":"ucreieof"}

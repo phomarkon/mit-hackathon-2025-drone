@@ -2,12 +2,14 @@ import sys
 import os
 import numpy as np
 import cv2
+import json
 from PIL import Image
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QPushButton, QVBoxLayout, QHBoxLayout, 
                             QLabel, QFileDialog, QWidget, QProgressBar, QListWidget, QListWidgetItem,
-                            QSplitter, QScrollArea, QGridLayout, QFrame)
+                            QSplitter, QScrollArea, QGridLayout, QFrame, QCheckBox)
 from PyQt6.QtGui import QPixmap, QImage, QPainter, QPen, QColor
-from PyQt6.QtCore import Qt, QThread, pyqtSignal
+from PyQt6.QtCore import Qt, QThread, pyqtSignal, QUrl
+from PyQt6.QtMultimedia import QSoundEffect
 import torch
 import torch.nn as nn
 import torchvision.transforms as transforms
@@ -23,7 +25,24 @@ class AnomalyDetector:
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
-        self.threshold = 0.5  # Threshold for anomaly detection
+        
+        # Try to load optimal threshold from JSON file
+        try:
+            with open("outputs/patchcore_resnet18/optimal_threshold_resnet18.json", 'r') as f:
+                threshold_data = json.load(f)
+                self.threshold = threshold_data.get("optimal_threshold", 0.5)
+                print(f"Loaded optimal threshold: {self.threshold} from JSON file")
+        except Exception as e:
+            print(f"Could not load optimal threshold: {e}. Using default.")
+            self.threshold = 0.5  # Default threshold
+            
+        # Configure human detection parameters
+        self.human_detection_config = {
+            'min_area': 50,      # Minimum area for human detection 
+            'max_area': 10000,   # Maximum area for human detection
+            'sensitivity': 2.0,  # Standard deviations above mean
+            'padding': 5         # Padding around detected humans
+        }
 
     def load_model(self):
         # For the MVP, we'll use a pre-trained ResNet18 model
@@ -41,6 +60,59 @@ class AnomalyDetector:
         model.eval()
         return model
 
+    def detect_humans_thermal(self, img_np):
+        """Detect humans in thermal images based on bright spots"""
+        # Convert to grayscale
+        gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
+        
+        # Use adaptive thresholding based on image statistics
+        mean_val = np.mean(gray)
+        std_val = np.std(gray)
+        sensitivity = self.human_detection_config['sensitivity']
+        threshold = mean_val + sensitivity * std_val
+        
+        # Threshold the image to get bright regions
+        _, binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+        
+        # Remove noise with morphological operations
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+        binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+        
+        # Find contours for bright regions
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Filter contours by size to identify potential humans
+        min_area = self.human_detection_config['min_area']
+        max_area = self.human_detection_config['max_area']
+        padding = self.human_detection_config['padding']
+        
+        human_detections = []
+        
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if min_area < area < max_area:
+                # Get bounding box
+                x, y, w, h = cv2.boundingRect(contour)
+                
+                # Add padding
+                x_padded = max(0, x - padding)
+                y_padded = max(0, y - padding)
+                w_padded = min(img_np.shape[1] - x_padded, w + 2*padding)
+                h_padded = min(img_np.shape[0] - y_padded, h + 2*padding)
+                
+                # Calculate confidence based on thermal intensity
+                mask = np.zeros_like(gray)
+                cv2.drawContours(mask, [contour], 0, 255, -1)
+                mean_intensity = cv2.mean(gray, mask=mask)[0] / 255.0  # Normalize to 0-1
+                
+                human_detections.append({
+                    'box': (x_padded, y_padded, w_padded, h_padded),
+                    'confidence': float(mean_intensity),
+                    'area': float(area)
+                })
+        
+        return human_detections
+
     def predict(self, image_path):
         # Open image and convert to RGB if grayscale
         image = Image.open(image_path)
@@ -54,30 +126,34 @@ class AnomalyDetector:
             score = self.model(image_tensor).item()
         
         is_anomaly = score > self.threshold
-        confidence = score if is_anomaly else 1 - score
         
-        # Simple heatmap for visualization (in a real implementation, this would be more sophisticated)
-        # For MVP, we'll just highlight areas with high thermal signatures
+        # Calculate confidence with proper capping
+        confidence = min(score * 100, 100.0) if is_anomaly else min((1 - score) * 100, 100.0)
+        
+        # Get original image as numpy array
         img_np = np.array(image)
-        gray = cv2.cvtColor(img_np, cv2.COLOR_RGB2GRAY)
         
-        # Simple thresholding to find bright areas (potential thermal signatures)
-        _, thresh = cv2.threshold(gray, 150, 255, cv2.THRESH_BINARY)
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # Store original image for display
+        original_img = img_np.copy()
+        result_img = original_img.copy()
         
-        # Draw bounding boxes around potential anomalies
-        result_img = img_np.copy()
+        # Detect humans if it's an anomaly
+        human_detections = []
         if is_anomaly:
-            for contour in contours:
-                if cv2.contourArea(contour) > 100:  # Filter small contours
-                    x, y, w, h = cv2.boundingRect(contour)
-                    cv2.rectangle(result_img, (x, y), (x+w, y+h), (0, 0, 255), 2)
+            # Use our improved thermal human detection
+            human_detections = self.detect_humans_thermal(img_np)
+            
+            # Draw bounding boxes on the original image
+            for human in human_detections:
+                x, y, w, h = human['box']
+                cv2.rectangle(result_img, (x, y), (x+w, y+h), (0, 0, 255), 2)
         
         return {
             'is_anomaly': is_anomaly,
-            'confidence': confidence * 100,  # Convert to percentage
-            'heatmap_img': result_img,
-            'bounding_boxes': [(cv2.boundingRect(c), cv2.contourArea(c)) for c in contours if cv2.contourArea(c) > 100]
+            'confidence': confidence,  # Already a percentage
+            'heatmap_img': result_img,  # Original with bounding boxes
+            'bounding_boxes': [(human['box'], human['area']) for human in human_detections],
+            'humans_detected': len(human_detections)
         }
 
 
@@ -100,6 +176,7 @@ class ProcessThread(QThread):
                 result = self.detector.predict(path)
                 result['path'] = path
                 result['filename'] = os.path.basename(path)
+                result['reviewed'] = False  # Initialize as not reviewed
                 results.append(result)
                 self.result_signal.emit(result)
             except Exception as e:
@@ -180,6 +257,14 @@ class MainWindow(QMainWindow):
         self.detector = AnomalyDetector()
         self.image_paths = []
         self.results = []
+        self.reviewed_images = set()  # Track reviewed images
+        
+        # Initialize sound effect for alerts
+        self.alert_sound = QSoundEffect()
+        self.alert_sound_path = "alert.mp3"
+        if os.path.exists(self.alert_sound_path):
+            self.alert_sound.setSource(QUrl.fromLocalFile(self.alert_sound_path))
+            self.alert_sound.setVolume(0.5)
         
         self.init_ui()
         
@@ -198,8 +283,13 @@ class MainWindow(QMainWindow):
         self.process_btn.clicked.connect(self.process_images)
         self.process_btn.setEnabled(False)
         
+        # Show threshold value
+        threshold_label = QLabel(f"Threshold: {self.detector.threshold:.4f}")
+        threshold_label.setStyleSheet("font-weight: bold;")
+        
         controls_layout.addWidget(self.load_btn)
         controls_layout.addWidget(self.process_btn)
+        controls_layout.addWidget(threshold_label)
         
         # Progress bar
         self.progress_bar = QProgressBar()
@@ -234,10 +324,19 @@ class MainWindow(QMainWindow):
         self.filename_label = QLabel("Filename: -")
         self.anomaly_label = QLabel("Anomaly: -")
         self.confidence_label = QLabel("Confidence: -")
+        self.humans_label = QLabel("Humans Detected: -")
+        self.review_checkbox = QCheckBox("Mark as Reviewed")
+        self.review_checkbox.stateChanged.connect(self.toggle_review)
+        self.alert_btn = QPushButton("🚨 Send Alert")
+        self.alert_btn.clicked.connect(self.send_alert)
+        self.alert_btn.setStyleSheet("background-color: #ff4b4b; color: white; font-weight: bold;")
         
         details_layout.addWidget(self.filename_label, 0, 0)
         details_layout.addWidget(self.anomaly_label, 1, 0)
         details_layout.addWidget(self.confidence_label, 2, 0)
+        details_layout.addWidget(self.humans_label, 3, 0)
+        details_layout.addWidget(self.review_checkbox, 4, 0)
+        details_layout.addWidget(self.alert_btn, 5, 0)
         
         right_layout.addWidget(self.image_viewer)
         right_layout.addWidget(details_frame)
@@ -270,6 +369,8 @@ class MainWindow(QMainWindow):
             self.filename_label.setText("Filename: -")
             self.anomaly_label.setText("Anomaly: -")
             self.confidence_label.setText("Confidence: -")
+            self.humans_label.setText("Humans Detected: -")
+            self.review_checkbox.setChecked(False)
             
     def process_images(self):
         if not self.image_paths:
@@ -296,7 +397,8 @@ class MainWindow(QMainWindow):
         # Add to list widget
         item_text = f"{result['filename']} - "
         if result['is_anomaly']:
-            item_text += f"ANOMALY ({result['confidence']:.1f}%)"
+            humans_text = f" ({result['humans_detected']} humans)" if result['humans_detected'] > 0 else ""
+            item_text += f"ANOMALY ({result['confidence']:.1f}%){humans_text}"
         else:
             item_text += f"Normal ({result['confidence']:.1f}%)"
             
@@ -326,7 +428,50 @@ class MainWindow(QMainWindow):
         self.filename_label.setText(f"Filename: {result['filename']}")
         self.anomaly_label.setText(f"Anomaly: {'Yes' if result['is_anomaly'] else 'No'}")
         self.confidence_label.setText(f"Confidence: {result['confidence']:.1f}%")
+        self.humans_label.setText(f"Humans Detected: {result['humans_detected']}")
         
+        # Update review checkbox without triggering the callback
+        self.review_checkbox.blockSignals(True)
+        self.review_checkbox.setChecked(result.get('reviewed', False))
+        self.review_checkbox.blockSignals(False)
+        
+    def toggle_review(self, state):
+        current_item = self.image_list.currentItem()
+        if current_item:
+            result = current_item.data(Qt.ItemDataRole.UserRole)
+            result['reviewed'] = (state == Qt.CheckState.Checked.value)
+            
+            # Update the item's display if needed
+            if result['reviewed']:
+                current_item.setText(current_item.text() + " ✓")
+            else:
+                current_item.setText(current_item.text().replace(" ✓", ""))
+            
+            # Track reviewed status
+            if result['reviewed']:
+                self.reviewed_images.add(result['filename'])
+            else:
+                if result['filename'] in self.reviewed_images:
+                    self.reviewed_images.remove(result['filename'])
+    
+    def send_alert(self):
+        """Send an alert for the current image"""
+        current_item = self.image_list.currentItem()
+        if current_item:
+            result = current_item.data(Qt.ItemDataRole.UserRole)
+            
+            # Play alert sound
+            if os.path.exists(self.alert_sound_path) and self.alert_sound.isLoaded():
+                self.alert_sound.play()
+            
+            # Show toast-like notification
+            from PyQt6.QtWidgets import QMessageBox
+            msg = QMessageBox()
+            msg.setWindowTitle("Alert Sent")
+            msg.setText(f"Alert sent for {result['filename']}")
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.exec()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

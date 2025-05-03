@@ -1,0 +1,7 @@
+{"time":"2025-05-03T09:03:53.01459+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"outputs/patchcore_resnet50/wandb/wandb/run-20250503_090352-46807xrz/logs/debug-core.log"}
+{"time":"2025-05-03T09:03:53.387364+02:00","level":"INFO","msg":"created new stream","id":"46807xrz"}
+{"time":"2025-05-03T09:03:53.387403+02:00","level":"INFO","msg":"stream: started","id":"46807xrz"}
+{"time":"2025-05-03T09:03:53.387527+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"46807xrz"}
+{"time":"2025-05-03T09:03:53.387723+02:00","level":"INFO","msg":"sender: started","stream_id":"46807xrz"}
+{"time":"2025-05-03T09:03:53.387768+02:00","level":"INFO","msg":"handler: started","stream_id":"46807xrz"}
+{"time":"2025-05-03T09:03:53.604223+02:00","level":"INFO","msg":"Starting system monitor"}

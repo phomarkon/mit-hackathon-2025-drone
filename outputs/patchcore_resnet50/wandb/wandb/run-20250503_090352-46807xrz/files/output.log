@@ -1,0 +1,14 @@
+Wandb initialized. Run name: patchcore_resnet50_20250503_090352
+Using device: cpu
+Train dataset size: 166
+Test dataset size: 55
+
+--- Running experiment for backbone: resnet50 ---
+--- Training (Building Memory Bank) ---
+Extracting features:   0%|                                               | 0/21 [00:00<?, ?it/s]/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/lib/python3.13/site-packages/torch/utils/data/dataloader.py:683: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+Extracting features: 100%|██████████████████████| 21/21 [00:16<00:00,  1.27it/s, Patches=130144]
+Total patches extracted: 130144
+Applying coreset selection with ratio 0.1
+Will select approximately 13014 patches from 130144 total patches
+Selecting coreset:   7%|██▎                               | 908/13013 [05:05<1:21:56,  2.46it/s]

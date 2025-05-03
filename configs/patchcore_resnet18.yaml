@@ -41,6 +41,9 @@ human_detection:
   min_area: 50
   max_area: 10000
   sensitivity: 2.0
+  use_yolo: true  # Enable YOLO detection
+  yolo_confidence: 0.4
+  yolo_size: "nano"  # Options: nano, small, medium, large
 
 # Weights & Biases logging
 wandb:

@@ -1,0 +1,66 @@
+Wandb initialized. Run name: patchcore_resnet18_20250503_074619
+Using device: cpu
+Train dataset size: 166
+Test dataset size: 60
+
+--- Running experiment for backbone: resnet18 ---
+--- Training (Building Memory Bank) ---
+Extracting features:   0%|                                                                        | 0/21 [00:00<?, ?it/s]/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/lib/python3.13/site-packages/torch/utils/data/dataloader.py:683: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+Extracting features: 100%|███████████████████████████████████████████████| 21/21 [00:14<00:00,  1.44it/s, Patches=130144]
+Total patches extracted: 130144
+Applying coreset selection with ratio 0.1
+Will select approximately 13014 patches from 130144 total patches
+Selecting coreset: 100%|███████████████████████████████████████████████████████████| 13013/13013 [10:59<00:00, 19.72it/s]
+Memory bank built with 13014 patches
+Memory bank built in 674.54 seconds
+Model saved to outputs/patchcore_resnet18/patchcore_resnet18.pth
+Memory bank saved to outputs/patchcore_resnet18/patchcore_resnet18.pth
+--- Testing Model ---
+Computing anomaly scores: 100%|███████████████████████████████████████████████| 15/15 [03:23<00:00, 13.58s/it, Scored=60]
+Test AUROC: 0.9444
+Testing completed in 203.74 seconds
+Evaluation results saved to outputs/patchcore_resnet18
+Best threshold: 4.8901 (F1 score: 0.8696)
+Optimal threshold saved to outputs/patchcore_resnet18/optimal_threshold_resnet18.json
+--- Visualizing Results ---
+Detected 4 humans in DJI_M300_H20t_0015.jpg
+Detected 1 humans in DJI_M300_H20t_0001.jpg
+Detected 4 humans in DJI_M300_H20t_0013.jpg
+Detected 3 humans in DJI_M300_H20t_0030.jpg
+Detected 0 humans in DJI_M300_H20t_0012.jpg
+Detected 2 humans in DJI_M300_H20t_0026.jpg
+Detected 0 humans in DJI_M300_H20t_0023.jpg
+Detected 4 humans in DJI_M300_H20t_0025.jpg
+Detected 2 humans in DJI_M300_H20t_0006.jpg
+Detected 4 humans in DJI_M300_H20t_0022.jpg
+Detected 2 humans in DJI_M300_H20t_0029.jpg
+Detected 3 humans in DJI_M300_H20t_0024.jpg
+Detected 0 humans in DJI_M300_H20t_0011.jpg
+Detected 1 humans in DJI_M300_H20t_0004.jpg
+Detected 0 humans in DJI_M300_H20t_0010.jpg
+Detected 2 humans in DJI_M300_H20t_0027.jpg
+Detected 1 humans in DJI_M300_H20t_0007.jpg
+Detected 0 humans in DJI_M300_H20t_0014.jpg
+Detected 1 humans in DJI_M300_H20t_0005.jpg
+Detected 2 humans in DJI_M300_H20t_0008.jpg
+Detected 1 humans in DJI_M300_H20t_0008.jpg
+Detected 3 humans in DJI_M300_H20t_0003.jpg
+Detected 0 humans in DJI_M300_H20t_0009.jpg
+Detected 4 humans in DJI_M300_H20t_0002.jpg
+Detected 0 humans in DJI_M300_H20t_0011.jpg
+Detected 3 humans in DJI_M300_H20t_0009.jpg
+Detected 1 humans in DJI_M300_H20t_0017.jpg
+Detected 3 humans in DJI_M300_H20t_0012.jpg
+Detected 3 humans in DJI_M300_H20t_0021.jpg
+Detected 4 humans in DJI_M300_H20t_0016.jpg
+Detected 4 humans in DJI_M300_H20t_0021.jpg
+Detected 0 humans in DJI_M300_H20t_0024.jpg
+Detected 2 humans in DJI_M300_H20t_0018.jpg
+Detected 4 humans in DJI_M300_H20t_0028.jpg
+Detected 2 humans in DJI_M300_H20t_0020.jpg
+Detected 2 humans in DJI_M300_H20t_0019.jpg
+Detected 2 humans in DJI_M300_H20t_0027.jpg
+Detected 2 humans in DJI_M300_H20t_0013.jpg
+Detected 2 humans in DJI_M300_H20t_0016.jpg
+Visualizations saved to outputs/patchcore_resnet18/visualizations

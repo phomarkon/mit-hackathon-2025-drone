@@ -21,7 +21,17 @@ experiment:
   train: true
   test: true
   visualize: true
+  detect_humans: true
   vis_topk: 10
+# Human detection settings for thermal images
+human_detection:
+  enabled: true
+  min_area: 90
+  max_area: 9000
+  sensitivity: 1.85
+  use_yolo: true  # Enable YOLO detection
+  yolo_confidence: 0.5
+  yolo_size: "small"  # Options: nano, small, medium, large
 wandb:
   use_wandb: true
   project: "drone-anomaly-detection"
