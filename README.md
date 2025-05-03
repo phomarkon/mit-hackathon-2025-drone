@@ -139,3 +139,15 @@ The implementation integrates with Weights & Biases (wandb) for experiment track
 ## License
 
 This project is part of the MIT Hackathon 2025 Drone Challenge.
+
+## Run All Backbones and Ensemble (Example Script)
+
+You can run all three backbones and ensemble their results in one experiment using the following shell script:
+
+```sh
+#!/bin/bash
+# Run PatchCore with ResNet18, ResNet50, and WideResNet50_2 and ensemble results
+python -m src.main --config configs/patchcore.yaml --output_dir outputs/patchcore_ensemble
+```
+
+This will automatically train/test/ensemble all three models and log results to wandb and the output directory.

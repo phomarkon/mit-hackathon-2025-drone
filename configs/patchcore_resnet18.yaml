@@ -1,0 +1,29 @@
+data:
+  train_path: "data/train"
+  test_normal_path: "data/test/normal"
+  test_abnormal_path: "data/test/abnormal"
+  image_size: 224
+model:
+  name: "patchcore"
+  backbone: "resnet18"
+  layers: ["layer2", "layer3"]
+  coreset_sampling_ratio: 0.1
+  model_filename: "patchcore_resnet18.pth"
+training:
+  batch_size: 8
+  device: "cpu"
+  num_workers: 2
+evaluation:
+  batch_size: 4
+output_path: "outputs/patchcore_resnet18"
+experiment:
+  run_name: "patchcore_resnet18"
+  train: true
+  test: true
+  visualize: true
+  vis_topk: 10
+wandb:
+  use_wandb: true
+  project: "drone-anomaly-detection"
+  entity: null
+  tags: ["patchcore", "resnet18"] 

@@ -8,8 +8,8 @@ data:
 # Model settings (PatchCore)
 model:
   name: "patchcore"
-  backbone: "resnet18" # Start with a simpler backbone
-  layers: ["layer2", "layer3"] # Intermediate layers for features
+  backbone: "resnet18" # This will be overridden in main.py for ensemble
+  layers: ["layer2", "layer3"] # These layers exist in all three backbones
   coreset_sampling_ratio: 0.1  # Use 10% of patches for memory bank
   model_filename: "patchcore_resnet18.pth" # Model-specific filename
 
