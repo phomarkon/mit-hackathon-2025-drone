@@ -15,6 +15,8 @@ from src.data_loader import get_dataloaders
 from src.models.patchcore import PatchCore
 from src.visualize import visualize_anomalies
 
+torch.classes.__path__ = [] # Fix for Streamlit/PyTorch watcher conflict
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Anomaly Detection Pipeline')
     parser.add_argument('--config', type=str, required=True,
