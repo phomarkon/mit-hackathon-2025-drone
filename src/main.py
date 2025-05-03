@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import argparse
 import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve
+from sklearn.metrics import precision_recall_curve, confusion_matrix
 import wandb
 import yaml
 import time
@@ -133,12 +133,31 @@ def test(model, test_loader, config, output_dir, using_wandb=False):
     plt.close()
     print(f"Evaluation results saved to {output_dir}")
     
+    # Compute confusion matrix at threshold 0.5
+    threshold = 0.5
+    y_pred = (anomaly_scores >= threshold).astype(int)
+    cm = confusion_matrix(gt_labels, y_pred)
+    fig_cm, ax = plt.subplots()
+    im = ax.imshow(cm, cmap='Blues')
+    ax.set_xlabel('Predicted label')
+    ax.set_ylabel('True label')
+    ax.set_title('Confusion Matrix (threshold=0.5)')
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, cm[i, j], ha='center', va='center', color='black')
+    fig_cm.colorbar(im)
+    cm_path = os.path.join(output_dir, 'confusion_matrix.png')
+    fig_cm.savefig(cm_path)
+    plt.close(fig_cm)
+    
     # Log metrics to wandb
     if using_wandb:
         wandb.log({
             "test/auroc": auroc,
             "test/time": test_time,
             "test/evaluation_curves": wandb.Image(plots_path),
+            "test/confusion_matrix": wandb.Image(cm_path),
+            "test/confusion_matrix_raw": cm.tolist(),
         })
         
         # Log histogram of anomaly scores for normal vs abnormal
@@ -156,6 +175,7 @@ def test(model, test_loader, config, output_dir, using_wandb=False):
         results_artifact.add_file(labels_path)
         results_artifact.add_file(paths_file)
         results_artifact.add_file(plots_path)
+        results_artifact.add_file(cm_path)
         wandb.log_artifact(results_artifact)
 
     return anomaly_scores, gt_labels, image_paths
@@ -192,9 +212,9 @@ def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, i
         gt_labels=gt_labels,
         image_paths=image_paths,
         config=config,
-        topk=config['experiment'].get('vis_topk', 10),
+        topk=len(anomaly_scores),  # Show all images
         output_dir=vis_output_dir,
-        return_images=using_wandb  # Get actual images for wandb logging
+        return_images=True  # Always return all images for wandb logging
     )
     
     # Log visualizations to wandb
@@ -203,8 +223,6 @@ def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, i
         wandb.log({
             "visualizations/top_anomalies_summary": wandb.Image(summary_path),
         })
-        
-        # Log top individual anomalies
         vis_images_artifact = wandb.Artifact(f"{config['experiment']['run_name']}-visualizations", type="visualization")
         for i, (img_path, score, label) in enumerate(individual_images):
             caption = f"Score: {score:.4f}, Label: {'Anomaly' if label else 'Normal'}"
@@ -326,6 +344,17 @@ def main():
     # Finish wandb run
     if using_wandb:
         wandb.finish()
+    
+    # Data leakage check: ensure no overlap between train and test image paths
+    train_image_set = set(train_loader.dataset.image_paths)
+    test_image_set = set(test_loader.dataset.image_paths)
+    overlap = train_image_set & test_image_set
+    if overlap:
+        print(f"WARNING: Data leakage detected! {len(overlap)} overlapping images between train and test.")
+        if using_wandb:
+            wandb.alert(title="Data Leakage Detected", text=f"{len(overlap)} overlapping images between train and test.")
+    else:
+        print("No data leakage detected between train and test sets.")
     
     print("--- Pipeline Finished ---")
 

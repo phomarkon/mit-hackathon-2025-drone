@@ -28,63 +28,49 @@ def parse_args():
     return parser.parse_args()
 
 def visualize_anomalies(anomaly_scores, gt_labels, image_paths, config, topk=10, output_dir='outputs/visualizations', return_images=False):
-    """Visualize top anomalies."""
+    """Visualize top anomalies or all if topk >= len(anomaly_scores)."""
     os.makedirs(output_dir, exist_ok=True)
-    
-    # Get indices of top anomalies
-    top_indices = np.argsort(anomaly_scores)[::-1][:topk]
-    
-    # Create summary figure
+    n_images = len(anomaly_scores)
+    if topk >= n_images:
+        indices = np.argsort(anomaly_scores)[::-1]
+    else:
+        indices = np.argsort(anomaly_scores)[::-1][:topk]
+    # Create summary figure (up to 10 for display)
+    n_summary = min(10, len(indices))
     plt.figure(figsize=(15, 10))
-    
-    # For returning image info if needed (for wandb)
     individual_images = []
-    
-    for i, idx in enumerate(top_indices):
-        # Get image and its score
+    for i, idx in enumerate(indices):
         image_path = image_paths[idx]
         score = anomaly_scores[idx]
         label = gt_labels[idx]
         label_str = "Anomaly" if label == 1 else "Normal"
-        
-        # Load image using PIL
         try:
             image = Image.open(image_path).convert('RGB')
         except Exception as e:
             print(f"Error loading image {image_path}: {e}")
             continue
-        
-        # Add to plot
-        plt.subplot(2, 5, i + 1)
-        plt.imshow(image)
-        plt.title(f"Score: {score:.4f}\nLabel: {label_str}")
-        plt.axis('off')
-        
-        # Also save individual image
+        if i < n_summary:
+            plt.subplot(2, 5, i + 1)
+            plt.imshow(image)
+            plt.title(f"Score: {score:.4f}\nLabel: {label_str}")
+            plt.axis('off')
+        # Save individual image
+        individual_img_path = os.path.join(output_dir, f"anomaly_{i+1}_score_{score:.4f}_label_{label}.png")
         plt.figure(figsize=(8, 8))
         plt.imshow(image)
         plt.title(f"Anomaly Score: {score:.4f}\nGround Truth: {label_str}\nImage: {os.path.basename(image_path)}")
         plt.axis('off')
         plt.tight_layout()
-        
-        # Save individual image
-        individual_img_path = os.path.join(output_dir, f"anomaly_{i+1}_score_{score:.4f}_label_{label}.png")
         plt.savefig(individual_img_path)
         plt.close()
-        
-        # Add to list for returning if needed
         if return_images:
             individual_images.append((individual_img_path, score, label))
-    
     # Save summary figure
     plt.tight_layout()
     summary_path = os.path.join(output_dir, "top_anomalies_summary.png")
     plt.savefig(summary_path)
     plt.close()
-    
     print(f"Visualizations saved to {output_dir}")
-    
-    # Return info for wandb if requested
     if return_images:
         return summary_path, individual_images
     return None
