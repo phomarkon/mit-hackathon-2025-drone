@@ -1,29 +1,50 @@
+# Data settings
 data:
   train_path: "data/train"
   test_normal_path: "data/test/normal"
   test_abnormal_path: "data/test/abnormal"
-  image_size: 224
+  image_size: 224 # Standard size for many pre-trained models
+
+# Model settings (PatchCore)
 model:
   name: "patchcore"
   backbone: "resnet18"
   layers: ["layer2", "layer3"]
   coreset_sampling_ratio: 0.1
   model_filename: "patchcore_resnet18.pth"
+
+# Training settings
 training:
   batch_size: 8
   device: "cpu"
   num_workers: 2
+
+# Evaluation settings
 evaluation:
   batch_size: 4
+
+# Output settings
 output_path: "outputs/patchcore_resnet18"
+
+# Experiment settings
 experiment:
   run_name: "patchcore_resnet18"
   train: true
   test: true
   visualize: true
+  detect_humans: true
   vis_topk: 10
+
+# Human detection settings for thermal images
+human_detection:
+  enabled: true
+  min_area: 50
+  max_area: 10000
+  sensitivity: 2.0
+
+# Weights & Biases logging
 wandb:
   use_wandb: true
   project: "drone-anomaly-detection"
   entity: null
-  tags: ["patchcore", "resnet18"] 
+  tags: ["patchcore", "resnet18", "human-detection"] 

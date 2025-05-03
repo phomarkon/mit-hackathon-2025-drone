@@ -8,6 +8,7 @@ from sklearn.metrics import precision_recall_curve, confusion_matrix, f1_score
 import wandb
 import yaml
 import time
+import json
 from datetime import datetime
 
 from src.utils import load_config
@@ -145,6 +146,21 @@ def test(model, test_loader, config, output_dir, using_wandb=False, backbone_nam
         if f1 > best_f1:
             best_f1 = f1
             best_thresh = t
+            
+    print(f"Best threshold: {best_thresh:.4f} (F1 score: {best_f1:.4f})")
+    
+    # Save the optimal threshold to a JSON file for later use in the app
+    threshold_data = {
+        "optimal_threshold": float(best_thresh),
+        "f1_score": float(best_f1),
+        "backbone": backbone_name or "default",
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    threshold_file = os.path.join(output_dir, f'optimal_threshold_{backbone_name or "model"}.json')
+    with open(threshold_file, 'w') as f:
+        json.dump(threshold_data, f, indent=4)
+    print(f"Optimal threshold saved to {threshold_file}")
+            
     # Compute confusion matrix at best threshold
     y_pred_best = (anomaly_scores >= best_thresh).astype(int)
     cm_best = confusion_matrix(gt_labels, y_pred_best)
@@ -169,7 +185,7 @@ def test(model, test_loader, config, output_dir, using_wandb=False, backbone_nam
         })
     return anomaly_scores, gt_labels, image_paths, best_thresh
 
-def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, image_paths=None, using_wandb=False):
+def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, image_paths=None, using_wandb=False, best_thresh=None):
     """Run visualization if enabled."""
     print("--- Visualizing Results ---")
     
@@ -191,9 +207,27 @@ def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, i
         except Exception as e:
             print(f"Error loading results files: {e}. Skipping visualization.")
             return
+    
+    # If no threshold is provided, try to load it from a file
+    if best_thresh is None:
+        model_name = config['model'].get('backbone', 'model')
+        if isinstance(model_name, list):
+            model_name = 'ensemble'
+        threshold_file = os.path.join(output_dir, f'optimal_threshold_{model_name}.json')
+        if os.path.exists(threshold_file):
+            try:
+                with open(threshold_file, 'r') as f:
+                    threshold_data = json.load(f)
+                best_thresh = threshold_data.get('optimal_threshold')
+                print(f"Loaded optimal threshold: {best_thresh:.4f} from {threshold_file}")
+            except Exception as e:
+                print(f"Error loading threshold from {threshold_file}: {e}")
 
     # Output directory for visualizations
     vis_output_dir = os.path.join(output_dir, 'visualizations')
+    
+    # Check if we should detect humans
+    detect_humans = config['experiment'].get('detect_humans', True)
     
     # Visualize top anomalies
     vis_results = visualize_anomalies(
@@ -203,7 +237,9 @@ def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, i
         config=config,
         topk=len(anomaly_scores),  # Show all images
         output_dir=vis_output_dir,
-        return_images=True  # Always return all images for wandb logging
+        return_images=True,  # Always return all images for wandb logging
+        detect_humans=detect_humans,
+        threshold=best_thresh  # Pass the optimal threshold for human detection
     )
     
     # Log visualizations to wandb
@@ -313,6 +349,20 @@ def main():
             if f1 > best_f1_ens:
                 best_f1_ens = f1
                 best_thresh_ens = t
+                
+        # Save ensemble threshold
+        ensemble_threshold_data = {
+            "optimal_threshold": float(best_thresh_ens),
+            "f1_score": float(best_f1_ens),
+            "backbone": "ensemble",
+            "individual_thresholds": {f"backbone_{i}": float(t) for i, t in enumerate(all_thresholds)},
+            "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        }
+        ensemble_threshold_file = os.path.join(output_dir, 'optimal_threshold_ensemble.json')
+        with open(ensemble_threshold_file, 'w') as f:
+            json.dump(ensemble_threshold_data, f, indent=4)
+        print(f"Ensemble optimal threshold saved to {ensemble_threshold_file}")
+        
         y_pred_ens = (ensemble_scores >= best_thresh_ens).astype(int)
         cm_ens = confusion_matrix(all_labels, y_pred_ens)
         fig_cm_ens, ax = plt.subplots()
@@ -337,7 +387,12 @@ def main():
     # Visualization phase
     if run_visualize:
         try:
-            run_visualization(config, output_dir, all_scores[-1], all_labels, all_paths, using_wandb)
+            if len(all_scores) > 1:
+                # Use ensemble scores and threshold
+                run_visualization(config, output_dir, ensemble_scores, all_labels, all_paths, using_wandb, best_thresh_ens)
+            else:
+                # Use single model scores and threshold
+                run_visualization(config, output_dir, all_scores[-1], all_labels, all_paths, using_wandb, all_thresholds[-1])
         except Exception as e:
              print(f"An error occurred during visualization: {e}")
              # Don't terminate the whole run for visualization error

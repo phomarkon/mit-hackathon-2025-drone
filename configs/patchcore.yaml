@@ -29,15 +29,23 @@ output_path: "outputs/patchcore_resnet18" # Model-specific output path
 
 # Experiment settings
 experiment:
-  run_name: "patchcore_resnet18_baseline"
+  run_name: "patchcore_resnet18"
   train: true      # Whether to run training
   test: true       # Whether to run testing
   visualize: true  # Whether to run visualization
+  detect_humans: true  # Whether to detect humans in thermal images
   vis_topk: 10     # Number of top anomalies to visualize
+
+# Human detection settings for thermal images
+human_detection:
+  enabled: true    # Enable human detection
+  min_area: 50     # Minimum area for a human signature (default)
+  max_area: 10000  # Maximum area for a human signature (default)
+  sensitivity: 2.0 # Standard deviations above mean for adaptive thresholding (default)
 
 # Weights & Biases logging
 wandb:
   use_wandb: true
   project: "drone-anomaly-detection"
   entity: null  # Set to your wandb username or team name, or leave as null
-  tags: ["patchcore", "resnet18", "baseline"] 
+  tags: ["patchcore", "resnet18", "human-detection"] 
