@@ -1459,6 +1459,57 @@ def display_image_details(result):
                     st.rerun()
 
 
+def generate_report(results):
+    """Generate a text report from the results"""
+    if not results:
+        return "No results to generate a report from."
+
+    # Calculate summary statistics
+    total_images = len(results)
+    anomaly_counts = {"High": 0, "Medium": 0, "Low": 0}
+    total_humans = 0
+    total_confidence = 0
+
+    for res in results:
+        if res['is_anomaly']:
+            priority = res.get('priority', 'Unknown')
+            if priority in anomaly_counts:
+                anomaly_counts[priority] += 1
+            total_humans += res.get('humans_detected', 0)
+            total_confidence += res.get('confidence', 0)
+
+    avg_confidence = total_confidence / total_images if total_images > 0 else 0
+
+    # Generate the report string
+    report_str = "--- Anomaly Detection Report ---\n"
+    report_str += f"Total Images: {total_images}\n"
+    report_str += f"Total Anomalies: {anomaly_counts['High'] + anomaly_counts['Medium'] + anomaly_counts['Low']}\n"
+    report_str += f"  - High Priority: {anomaly_counts['High']}\n"
+    report_str += f"  - Medium Priority: {anomaly_counts['Medium']}\n"
+    report_str += f"  - Low Priority: {anomaly_counts['Low']}\n"
+    report_str += f"Total Humans Detected: {total_humans}\n"
+    report_str += f"Average Anomaly Confidence: {avg_confidence:.1f}%\n"
+
+    report_str += "\n\n--- Anomaly Details ---\n"
+    report_str += "{:<30} {:<10} {:<12} {:<10} {:<15}\n".format(
+        "Filename", "Anomaly", "Confidence", "Priority", "Humans Detected"
+    )
+    report_str += "-" * 80 + "\n"
+
+    for res in results:
+        if res['is_anomaly']:
+            confidence_display = f"{min(abs(res['confidence']), 100.0):.1f}%" if 'confidence' in res else "N/A"
+            report_str += "{:<30} {:<10} {:<12} {:<10} {:<15}\n".format(
+                res.get('filename', 'N/A'),
+                str(res.get('is_anomaly', 'N/A')),
+                confidence_display,
+                res.get('priority', 'N/A'),
+                str(res.get('humans_detected', 'N/A'))
+            )
+
+    return report_str
+
+
 def main():
     try:
         # Sidebar
@@ -1710,6 +1761,15 @@ def main():
                         # Display the details for the selected image
                         display_image_details(selected_result)
                 
+            # Add report generation button
+            report_data = generate_report(results)
+            st.download_button(
+                label="Download Report (.txt)",
+                data=report_data,
+                file_name="anomaly_report.txt",
+                mime="text/plain",
+            )
+
         else:
             # Display instructions when no files are uploaded
             st.info("Please upload one or more thermal drone images to begin analysis.")
