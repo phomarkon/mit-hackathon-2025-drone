@@ -1,0 +1,45 @@
+{
+  "os": "macOS-15.4.1-arm64-arm-64bit-Mach-O",
+  "python": "CPython 3.13.3",
+  "startedAt": "2025-05-02T19:03:39.554209Z",
+  "args": [
+    "--config",
+    "configs/patchcore.yaml"
+  ],
+  "program": "-m src.main",
+  "git": {
+    "remote": "git@github.com:phomarkon/mit-hackathon-2025-drone.git",
+    "commit": "0c18ecaf9255183c2685c446a00365e3d8e0c1e8"
+  },
+  "email": "phongsakon@outlook.dk",
+  "root": "outputs/patchcore_resnet18/wandb",
+  "host": "Mac",
+  "executable": "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/bin/python",
+  "cpu_count": 10,
+  "cpu_count_logical": 10,
+  "disk": {
+    "/": {
+      "total": "494384795648",
+      "used": "314519498752"
+    },
+    "/System/Volumes/Data": {
+      "total": "494384795648",
+      "used": "314519498752"
+    }
+  },
+  "memory": {
+    "total": "25769803776"
+  },
+  "cpu": {
+    "count": 10,
+    "countLogical": 10
+  },
+  "apple": {
+    "name": "Apple M4",
+    "ecpuCores": 6,
+    "pcpuCores": 4,
+    "gpuCores": 10,
+    "memoryGb": 24,
+    "ramTotalBytes": "25769803776"
+  }
+}

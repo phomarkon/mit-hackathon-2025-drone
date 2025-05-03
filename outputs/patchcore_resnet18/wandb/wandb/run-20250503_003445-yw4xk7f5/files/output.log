@@ -1,0 +1,23 @@
+Wandb initialized. Run name: patchcore_resnet18_baseline_20250503_003444
+Using device: cpu
+Train dataset size: 166
+Test dataset size: 60
+--- Training (Building Memory Bank) ---
+Extracting features:   0%|                                                              | 0/21 [00:00<?, ?it/s]/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/lib/python3.13/site-packages/torch/utils/data/dataloader.py:683: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+Extracting features: 100%|█████████████████████████████████████| 21/21 [00:15<00:00,  1.39it/s, Patches=130144]
+Total patches extracted: 130144
+Applying coreset selection with ratio 0.1
+Will select approximately 13014 patches from 130144 total patches
+Selecting coreset: 100%|█████████████████████████████████████████████████| 13013/13013 [09:36<00:00, 22.58it/s]
+Memory bank built with 13014 patches
+Memory bank built in 591.54 seconds
+Model saved to outputs/patchcore_resnet18/patchcore_resnet18.pth
+Memory bank saved to outputs/patchcore_resnet18/patchcore_resnet18.pth
+--- Testing Model ---
+Computing anomaly scores: 100%|█████████████████████████████████████| 15/15 [03:03<00:00, 12.23s/it, Scored=60]
+Test AUROC: 0.9444
+Testing completed in 183.46 seconds
+Evaluation results saved to outputs/patchcore_resnet18
+--- Visualizing Results ---
+Visualizations saved to outputs/patchcore_resnet18/visualizations
