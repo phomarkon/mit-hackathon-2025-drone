@@ -1513,6 +1513,7 @@ def generate_report(results):
 def main():
     try:
         # Sidebar
+        st.sidebar.image("logo.png", width=200)
         st.sidebar.title("DroneGuardian Prime")
         st.sidebar.markdown("---")
         

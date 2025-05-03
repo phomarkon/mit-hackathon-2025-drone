@@ -1,0 +1,6 @@
+{
+    "optimal_threshold": 5.310353457325637,
+    "f1_score": 0.9259259259259259,
+    "backbone": "wide_resnet50_2",
+    "date": "2025-05-03 10:55:09"
+}

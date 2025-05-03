@@ -20,3 +20,10 @@ config: {'data': {'train_path': 'data/train', 'test_normal_path': 'data/test/nor
 2025-05-03 09:04:15,401 INFO    MainThread:66448 [wandb_run.py:_redirect():2483] Wrapping output streams.
 2025-05-03 09:04:15,401 INFO    MainThread:66448 [wandb_run.py:_redirect():2506] Redirects installed.
 2025-05-03 09:04:15,404 INFO    MainThread:66448 [wandb_init.py:init():1147] run started, returning control to user process
+2025-05-03 10:55:14,775 INFO    MainThread:66448 [wandb_run.py:_finish():2314] finishing run phongsakon-sdu/drone-anomaly-detection/3h20m1ko
+2025-05-03 10:55:14,775 INFO    MainThread:66448 [wandb_run.py:_atexit_cleanup():2531] got exitcode: 0
+2025-05-03 10:55:14,776 INFO    MainThread:66448 [wandb_run.py:_restore():2513] restore
+2025-05-03 10:55:14,776 INFO    MainThread:66448 [wandb_run.py:_restore():2519] restore done
+2025-05-03 10:55:34,491 INFO    MainThread:66448 [wandb_run.py:_footer_history_summary_info():4160] rendering history
+2025-05-03 10:55:34,492 INFO    MainThread:66448 [wandb_run.py:_footer_history_summary_info():4192] rendering summary
+2025-05-03 10:55:34,493 INFO    MainThread:66448 [wandb_run.py:_footer_sync_info():4121] logging synced files

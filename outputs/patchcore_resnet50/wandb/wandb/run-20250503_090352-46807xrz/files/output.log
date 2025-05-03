@@ -11,4 +11,45 @@ Extracting features: 100%|██████████████████
 Total patches extracted: 130144
 Applying coreset selection with ratio 0.1
 Will select approximately 13014 patches from 130144 total patches
-Selecting coreset:   7%|██▎                               | 908/13013 [05:05<1:21:56,  2.46it/s]
+Selecting coreset: 100%|████████████████████████████████| 13013/13013 [1:25:15<00:00,  2.54it/s]
+Memory bank built with 13014 patches
+Memory bank built in 5132.19 seconds
+Model saved to outputs/patchcore_resnet50/patchcore_resnet50.pth
+Memory bank saved to outputs/patchcore_resnet50/patchcore_resnet50.pth
+--- Testing Model ---
+Computing anomaly scores: 100%|█████████████████████| 14/14 [25:12<00:00, 108.05s/it, Scored=55]
+Test AUROC: 0.9667
+Testing completed in 1512.76 seconds
+Evaluation results saved to outputs/patchcore_resnet50
+Best threshold: 6.1395 (F1 score: 0.9020)
+Optimal threshold saved to outputs/patchcore_resnet50/optimal_threshold_resnet50.json
+--- Visualizing Results ---
+Detected 4 humans in DJI_M300_H20t_0015.jpg
+Detected 0 humans in DJI_M300_H20t_0012.jpg
+Detected 4 humans in DJI_M300_H20t_0025.jpg
+Detected 3 humans in DJI_M300_H20t_0024.jpg
+Detected 4 humans in DJI_M300_H20t_0028.jpg
+Detected 0 humans in DJI_M300_H20t_0010.jpg
+Detected 2 humans in DJI_M300_H20t_0029.jpg
+Detected 0 humans in DJI_M300_H20t_0023.jpg
+Detected 2 humans in DJI_M300_H20t_0026.jpg
+Detected 3 humans in DJI_M300_H20t_0030.jpg
+Detected 4 humans in DJI_M300_H20t_0013.jpg
+Detected 2 humans in DJI_M300_H20t_0027.jpg
+Detected 2 humans in DJI_M300_H20t_0006.jpg
+Detected 4 humans in DJI_M300_H20t_0022.jpg
+Detected 0 humans in DJI_M300_H20t_0014.jpg
+Detected 2 humans in DJI_M300_H20t_0020.jpg
+Detected 1 humans in DJI_M300_H20t_0008.jpg
+Detected 4 humans in DJI_M300_H20t_0021.jpg
+Detected 3 humans in DJI_M300_H20t_0009.jpg
+Detected 1 humans in DJI_M300_H20t_0007.jpg
+Detected 2 humans in DJI_M300_H20t_0008.jpg
+Detected 0 humans in DJI_M300_H20t_0011.jpg
+Detected 0 humans in DJI_M300_H20t_0009.jpg
+Detected 0 humans in DJI_M300_H20t_0011.jpg
+Detected 2 humans in DJI_M300_H20t_0018.jpg
+Detected 2 humans in DJI_M300_H20t_0016.jpg
+Detected 1 humans in DJI_M300_H20t_0017.jpg
+Detected 2 humans in DJI_M300_H20t_0019.jpg
+Visualizations saved to outputs/patchcore_resnet50/visualizations
