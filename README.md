@@ -1,3 +1,5 @@
+![Drone Guardian Logo](logo.png)
+
 # Thermal Drone Footage Anomaly Detector
 
 An application for anomaly detection in thermal drone footage for search and rescue operations. This prototype helps identify potential missing persons by detecting and prioritizing thermal anomalies and potential human shapes.
