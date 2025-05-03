@@ -4,7 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import argparse
 import matplotlib.pyplot as plt
-from sklearn.metrics import precision_recall_curve, confusion_matrix
+from sklearn.metrics import precision_recall_curve, confusion_matrix, f1_score
 import wandb
 import yaml
 import time
@@ -81,7 +81,7 @@ def train(model, train_loader, config, output_dir, using_wandb=False):
         model_artifact.add_file(model_path)
         wandb.log_artifact(model_artifact)
 
-def test(model, test_loader, config, output_dir, using_wandb=False):
+def test(model, test_loader, config, output_dir, using_wandb=False, backbone_name=None):
     """Test the model on normal and abnormal data."""
     print("--- Testing Model ---")
     start_time = time.time()
@@ -133,52 +133,39 @@ def test(model, test_loader, config, output_dir, using_wandb=False):
     plt.close()
     print(f"Evaluation results saved to {output_dir}")
     
-    # Compute confusion matrix at threshold 0.5
-    threshold = 0.5
-    y_pred = (anomaly_scores >= threshold).astype(int)
-    cm = confusion_matrix(gt_labels, y_pred)
-    fig_cm, ax = plt.subplots()
-    im = ax.imshow(cm, cmap='Blues')
+    # Find best threshold using F1 score
+    best_f1 = 0
+    best_thresh = 0.5
+    thresholds = np.linspace(np.min(anomaly_scores), np.max(anomaly_scores), 100)
+    for t in thresholds:
+        y_pred = (anomaly_scores >= t).astype(int)
+        f1 = f1_score(gt_labels, y_pred)
+        if f1 > best_f1:
+            best_f1 = f1
+            best_thresh = t
+    # Compute confusion matrix at best threshold
+    y_pred_best = (anomaly_scores >= best_thresh).astype(int)
+    cm_best = confusion_matrix(gt_labels, y_pred_best)
+    fig_cm_best, ax = plt.subplots()
+    im = ax.imshow(cm_best, cmap='Blues')
     ax.set_xlabel('Predicted label')
     ax.set_ylabel('True label')
-    ax.set_title('Confusion Matrix (threshold=0.5)')
-    for i in range(cm.shape[0]):
-        for j in range(cm.shape[1]):
-            ax.text(j, i, cm[i, j], ha='center', va='center', color='black')
-    fig_cm.colorbar(im)
-    cm_path = os.path.join(output_dir, 'confusion_matrix.png')
-    fig_cm.savefig(cm_path)
-    plt.close(fig_cm)
-    
-    # Log metrics to wandb
+    ax.set_title(f'Confusion Matrix (Best F1 Threshold={best_thresh:.4f})')
+    for i in range(cm_best.shape[0]):
+        for j in range(cm_best.shape[1]):
+            ax.text(j, i, cm_best[i, j], ha='center', va='center', color='black')
+    fig_cm_best.colorbar(im)
+    cm_best_path = os.path.join(output_dir, f'confusion_matrix_best_{backbone_name or "model"}.png')
+    fig_cm_best.savefig(cm_best_path)
+    plt.close(fig_cm_best)
     if using_wandb:
         wandb.log({
-            "test/auroc": auroc,
-            "test/time": test_time,
-            "test/evaluation_curves": wandb.Image(plots_path),
-            "test/confusion_matrix": wandb.Image(cm_path),
-            "test/confusion_matrix_raw": cm.tolist(),
+            f"test/confusion_matrix_best_{backbone_name or 'model'}": wandb.Image(cm_best_path),
+            f"test/confusion_matrix_best_raw_{backbone_name or 'model'}": cm_best.tolist(),
+            f"test/best_threshold_{backbone_name or 'model'}": best_thresh,
+            f"test/best_f1_{backbone_name or 'model'}": best_f1,
         })
-        
-        # Log histogram of anomaly scores for normal vs abnormal
-        normal_scores = anomaly_scores[gt_labels == 0]
-        abnormal_scores = anomaly_scores[gt_labels == 1]
-        
-        wandb.log({
-            "test/normal_score_histogram": wandb.Histogram(normal_scores),
-            "test/abnormal_score_histogram": wandb.Histogram(abnormal_scores)
-        })
-
-        # Log results as artifact
-        results_artifact = wandb.Artifact(f"{config['experiment']['run_name']}-results", type="results")
-        results_artifact.add_file(scores_path)
-        results_artifact.add_file(labels_path)
-        results_artifact.add_file(paths_file)
-        results_artifact.add_file(plots_path)
-        results_artifact.add_file(cm_path)
-        wandb.log_artifact(results_artifact)
-
-    return anomaly_scores, gt_labels, image_paths
+    return anomaly_scores, gt_labels, image_paths, best_thresh
 
 def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, image_paths=None, using_wandb=False):
     """Run visualization if enabled."""
@@ -236,15 +223,12 @@ def run_visualization(config, output_dir, anomaly_scores=None, gt_labels=None, i
 def main():
     args = parse_args()
     config = load_config(args.config)
-    
     # Determine output directory
     output_dir = args.output_dir if args.output_dir else config['output_path']
     os.makedirs(output_dir, exist_ok=True)
     print(f"Using output directory: {output_dir}")
-
     # Initialize wandb (always attempt based on config)
     using_wandb = init_wandb(config, args)
-    
     # Determine device
     device_cfg = config['training'].get('device', 'cpu')
     if device_cfg == 'cuda' and not torch.cuda.is_available():
@@ -253,7 +237,6 @@ def main():
     else:
         device = device_cfg
     print(f"Using device: {device}")
-    
     # Get data loaders
     try:
         train_loader, test_loader = get_dataloaders(config)
@@ -269,82 +252,96 @@ def main():
         if using_wandb:
             wandb.finish(exit_code=1)
         exit(1)
-
-    # Initialize model
-    # --- Model Selection Logic (Future Enhancement) ---
-    # Currently hardcoded for PatchCore, but could be dynamic based on config['model']['name']
-    if config['model']['name'].lower() == 'patchcore':
-        model = PatchCore(
-            backbone_name=config['model']['backbone'],
-            layers=config['model']['layers'],
-            coreset_sampling_ratio=config['model'].get('coreset_sampling_ratio', 0.1),
-            device=device
-        )
-    else:
-        print(f"Error: Model '{config['model']['name']}' not implemented.")
-        if using_wandb: wandb.finish(exit_code=1)
-        exit(1)
-    # -------------------------------------------------
-
     # Determine actions from config
     run_train = config['experiment'].get('train', False)
     run_test = config['experiment'].get('test', False)
     run_visualize = config['experiment'].get('visualize', False)
-    
-    # Model path
-    model_filename = config['model'].get('model_filename', f"{config['model']['name']}_model.pth")
-    model_path = os.path.join(output_dir, model_filename)
-    
-    # Results storage
-    anomaly_scores = None
-    gt_labels = None
-    image_paths = None
-    
-    # Training phase
-    if run_train:
-        try:
-            train(model, train_loader, config, output_dir, using_wandb)
-        except Exception as e:
-            print(f"An error occurred during training: {e}")
-            if using_wandb: wandb.finish(exit_code=1)
-            exit(1)
+    # Model factory for different backbones
+    def model_factory(backbone_name):
+        return PatchCore(
+            backbone_name=backbone_name,
+            layers=config['model']['layers'],
+            coreset_sampling_ratio=config['model'].get('coreset_sampling_ratio', 0.1),
+            device=device
+        )
+    # Support for running a single backbone/config or all (ensemble)
+    # PATCH: Only run the backbone specified in the config, unless explicitly requesting ensemble
+    backbone_value = config['model']['backbone']
+    if isinstance(backbone_value, str):
+        backbone_list = [(backbone_value, config['model'].get('model_filename', f"patchcore_{backbone_value}.pth"))]
+    elif isinstance(backbone_value, list):
+        backbone_list = [(b, f"patchcore_{b}.pth") for b in backbone_value]
     else:
-        # Try to load existing model if not training
-        if os.path.exists(model_path):
-            try:
-                model.load(model_path)
-            except Exception as e:
-                 print(f"Error loading model from {model_path}: {e}. Cannot proceed without training or a valid model.")
-                 if using_wandb: wandb.finish(exit_code=1)
-                 exit(1)
+        raise ValueError("model.backbone must be a string (single backbone) or list (ensemble)")
+    all_scores = []
+    all_labels = None
+    all_paths = None
+    all_thresholds = []
+    for backbone_name, model_filename in backbone_list:
+        print(f"\n--- Running experiment for backbone: {backbone_name} ---")
+        model = model_factory(backbone_name)
+        model_path = os.path.join(output_dir, model_filename)
+        if run_train:
+            train(model, train_loader, config, output_dir, using_wandb)
         else:
-            print(f"No model found at {model_path} and training is disabled. Cannot proceed.")
-            if using_wandb: wandb.finish(exit_code=1)
-            exit(1)
-    
-    # Testing phase
-    if run_test:
-        try:
-            anomaly_scores, gt_labels, image_paths = test(model, test_loader, config, output_dir, using_wandb)
-        except Exception as e:
-            print(f"An error occurred during testing: {e}")
-            if using_wandb: wandb.finish(exit_code=1)
-            # Allow visualization to proceed if scores exist
-            if not os.path.exists(os.path.join(output_dir, 'anomaly_scores.npy')):
-                 exit(1)
-
+            if os.path.exists(model_path):
+                model.load(model_path)
+            else:
+                print(f"No model found at {model_path} and training is disabled. Cannot proceed.")
+                if using_wandb: wandb.finish(exit_code=1)
+                exit(1)
+        if run_test:
+            scores, labels, paths, best_thresh = test(model, test_loader, config, output_dir, using_wandb, backbone_name=backbone_name)
+            all_scores.append(scores)
+            all_thresholds.append(best_thresh)
+            if all_labels is None:
+                all_labels = labels
+            if all_paths is None:
+                all_paths = paths
+    # Ensemble: average the anomaly scores from all models
+    if len(all_scores) > 1:
+        ensemble_scores = np.mean(np.stack(all_scores, axis=0), axis=0)
+        # Find best threshold for ensemble
+        best_f1_ens = 0
+        best_thresh_ens = 0.5
+        thresholds = np.linspace(np.min(ensemble_scores), np.max(ensemble_scores), 100)
+        for t in thresholds:
+            y_pred = (ensemble_scores >= t).astype(int)
+            f1 = f1_score(all_labels, y_pred)
+            if f1 > best_f1_ens:
+                best_f1_ens = f1
+                best_thresh_ens = t
+        y_pred_ens = (ensemble_scores >= best_thresh_ens).astype(int)
+        cm_ens = confusion_matrix(all_labels, y_pred_ens)
+        fig_cm_ens, ax = plt.subplots()
+        im = ax.imshow(cm_ens, cmap='Blues')
+        ax.set_xlabel('Predicted label')
+        ax.set_ylabel('True label')
+        ax.set_title(f'Confusion Matrix (Ensemble Best F1 Threshold={best_thresh_ens:.4f})')
+        for i in range(cm_ens.shape[0]):
+            for j in range(cm_ens.shape[1]):
+                ax.text(j, i, cm_ens[i, j], ha='center', va='center', color='black')
+        fig_cm_ens.colorbar(im)
+        cm_ens_path = os.path.join(output_dir, 'confusion_matrix_ensemble.png')
+        fig_cm_ens.savefig(cm_ens_path)
+        plt.close(fig_cm_ens)
+        if using_wandb:
+            wandb.log({
+                "test/confusion_matrix_ensemble": wandb.Image(cm_ens_path),
+                "test/confusion_matrix_ensemble_raw": cm_ens.tolist(),
+                "test/best_threshold_ensemble": best_thresh_ens,
+                "test/best_f1_ensemble": best_f1_ens,
+            })
     # Visualization phase
     if run_visualize:
         try:
-            run_visualization(config, output_dir, anomaly_scores, gt_labels, image_paths, using_wandb)
+            run_visualization(config, output_dir, all_scores[-1], all_labels, all_paths, using_wandb)
         except Exception as e:
              print(f"An error occurred during visualization: {e}")
              # Don't terminate the whole run for visualization error
-
     # Finish wandb run
     if using_wandb:
         wandb.finish()
-    
     # Data leakage check: ensure no overlap between train and test image paths
     train_image_set = set(train_loader.dataset.image_paths)
     test_image_set = set(test_loader.dataset.image_paths)
@@ -355,7 +352,6 @@ def main():
             wandb.alert(title="Data Leakage Detected", text=f"{len(overlap)} overlapping images between train and test.")
     else:
         print("No data leakage detected between train and test sets.")
-    
     print("--- Pipeline Finished ---")
 
 if __name__ == "__main__":

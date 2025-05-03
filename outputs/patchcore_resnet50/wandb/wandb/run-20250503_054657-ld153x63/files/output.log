@@ -1,0 +1,55 @@
+Wandb initialized. Run name: patchcore_resnet50_20250503_054656
+Using device: cpu
+Train dataset size: 166
+Test dataset size: 60
+
+--- Running experiment for backbone: resnet18 ---
+--- Training (Building Memory Bank) ---
+Extracting features:   0%|                  | 0/21 [00:00<?, ?it/s]/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/lib/python3.13/site-packages/torch/utils/data/dataloader.py:683: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+Extracting features: 100%|█| 21/21 [00:17<00:00,  1.23it/s, Patches
+Total patches extracted: 130144
+Applying coreset selection with ratio 0.1
+Will select approximately 13014 patches from 130144 total patches
+Selecting coreset: 100%|██████████████████████████████████████████████████████████████████████████████| 13013/13013 [24:29<00:00,  8.86it/s]
+Memory bank built with 13014 patches
+Memory bank built in 1486.25 seconds
+Model saved to outputs/patchcore_resnet50/patchcore_resnet50.pth
+Memory bank saved to outputs/patchcore_resnet50/patchcore_resnet50.pth
+--- Testing Model ---
+Computing anomaly scores: 100%|█████████████████████████████████████████████████████████████████████████| 15/15 [06:57<00:00, 27.86s/it, Scored=60]
+Test AUROC: 0.9444
+Testing completed in 417.95 seconds
+Evaluation results saved to outputs/patchcore_resnet50
+
+--- Running experiment for backbone: resnet50 ---
+Downloading: "https://download.pytorch.org/models/resnet50-0676ba61.pth" to /Users/phongsakonkonrad/.cache/torch/hub/checkpoints/resnet50-0676ba61.pth
+100%|█████████████████████████████████████████████████████████████████████████████████████████████████████████| 97.8M/97.8M [00:14<00:00, 6.94MB/s]
+--- Training (Building Memory Bank) ---
+Extracting features:   0%|                                                                                                  | 0/21 [00:00<?, ?it/s]/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/lib/python3.13/site-packages/torch/utils/data/dataloader.py:683: UserWarning: 'pin_memory' argument is set as true but not supported on MPS now, then device pinned memory won't be used.
+  warnings.warn(warn_msg)
+Extracting features: 100%|█████████████████████████████████████████████████████████████████████████| 21/21 [00:20<00:00,  1.04it/s, Patches=130144]
+Total patches extracted: 130144
+Applying coreset selection with ratio 0.1
+Will select approximately 13014 patches from 130144 total patches
+Selecting coreset:   1%|▍                                                                                     | 66/13013 [00:28<1:33:20,  2.31it/s]
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/src/main.py", line 358, in <module>
+    main()
+    ~~~~^^
+  File "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/src/main.py", line 285, in main
+    train(model, train_loader, config, output_dir, using_wandb)
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/src/main.py", line 62, in train
+    model.build_memory_bank(train_loader)
+    ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/src/models/patchcore.py", line 168, in build_memory_bank
+    selected_indices = self._greedy_coreset_selection(patch_features, self.coreset_sampling_ratio)
+  File "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/src/models/patchcore.py", line 117, in _greedy_coreset_selection
+    new_distances = np.linalg.norm(embeddings - embeddings[new_idx].reshape(1, -1), axis=1)
+  File "/Users/phongsakonkonrad/MIT_hackathon/mit-hackathon-2025-drone/.venv/lib/python3.13/site-packages/numpy/linalg/_linalg.py", line 2781, in norm
+    return sqrt(add.reduce(s, axis=axis, keepdims=keepdims))
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
